@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import static com.dataextraction.FlightProcessor.*;
 import static com.dataextraction.IO.Reader.getUserInputs;
+import static com.dataextraction.IO.Reader.parseBigDecimalOrSkip;
 import static com.dataextraction.JsonConstants.*;
 
 public class FlightScraper {
@@ -39,18 +40,6 @@ public class FlightScraper {
             processFlightData(jsonData, maxPrice, maxTaxes);
         } else {
             System.out.println("Invalid response from API: " + jsonData);
-        }
-    }
-
-    public static BigDecimal parseBigDecimalOrSkip(String input) {
-        if (input.isEmpty()) {
-            return BigDecimal.valueOf(Double.MAX_VALUE);
-        }
-        try {
-            return new BigDecimal(input);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input, using no limit.");
-            return BigDecimal.valueOf(Double.MAX_VALUE);
         }
     }
 
