@@ -9,8 +9,8 @@ import static com.dataextraction.IO.Writer.saveToCSV;
 
 public class FlightProcessor {
 
-    public static void processFlightData(String jsonData, BigDecimal maxPrice, BigDecimal maxTaxes) {
-        List<FlightCombination> flightCombinations = extractFlightData(jsonData, maxPrice, maxTaxes); // method in FlightScraper class
+    public static void processFlightData(String jsonData, BigDecimal maxPrice, BigDecimal maxTaxes, String directOutbound, String directInbound) {
+        List<FlightCombination> flightCombinations = extractFlightData(jsonData, maxPrice, maxTaxes, directOutbound, directInbound); // method in FlightScraper class
         if (!flightCombinations.isEmpty()) {
             saveToCSV(flightCombinations); // method in Writer class
             System.out.println("All flight combinations saved successfully to 'flights.csv'.");

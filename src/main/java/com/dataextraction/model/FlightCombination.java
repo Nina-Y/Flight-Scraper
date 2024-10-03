@@ -1,6 +1,7 @@
 package com.dataextraction.model;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 public class FlightCombination {
     private final BigDecimal price;
@@ -33,4 +34,14 @@ public class FlightCombination {
         return inboundSegments;
     }
     //</editor-fold>
+
+    @Override
+    public String toString() {
+        return "FlightCombination{" +
+                "price=" + price +
+                ", totalTaxes=" + totalTaxes +
+                ", outboundSegments=" + Arrays.toString(outboundSegments) +
+                ", inboundSegments=" + Arrays.toString(inboundSegments) +
+                '}';
+    }
 }

@@ -35,13 +35,15 @@ public class FlightScraper {
         String dateReturn = userInputs[3];
         BigDecimal maxPrice = parseBigDecimalOrSkip(userInputs[4]);
         BigDecimal maxTaxes = parseBigDecimalOrSkip(userInputs[5]);
+        String directOutbound = userInputs[6];
+        String directInbound = userInputs[6];
 
         String apiUrl = buildApiUrl(airportDeparture, airportArrival, dateDeparture, dateReturn);
 
         String jsonData = fetchFlightData(apiUrl);
 
         if (isValidJson(jsonData)) {
-            processFlightData(jsonData, maxPrice, maxTaxes);
+            processFlightData(jsonData, maxPrice, maxTaxes,directOutbound, directInbound);
         } else {
             System.out.println("Invalid response from API: " + jsonData);
         }
@@ -89,7 +91,7 @@ public class FlightScraper {
         return jsonData != null && jsonData.trim().startsWith("{");
     }
 
-    public static List<FlightCombination> extractFlightData(String jsonData, BigDecimal maxPrice, BigDecimal maxTaxes) {
+    public static List<FlightCombination> extractFlightData(String jsonData, BigDecimal maxPrice, BigDecimal maxTaxes, String directOutbound, String directInbound) {
 
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = parseJson(jsonData, objectMapper);
@@ -102,7 +104,7 @@ public class FlightScraper {
         Map<Integer, List<JsonNode>> inboundFlights = new HashMap<>();
         processJourneyDataByDirection(rootNode, outboundFlights, inboundFlights);
 
-        return createFlightCombinations(rootNode, outboundFlights, inboundFlights, maxPrice, maxTaxes);
+        return createFlightCombinations(rootNode, outboundFlights, inboundFlights, maxPrice, maxTaxes, directOutbound, directInbound);
     }
 
     private static JsonNode parseJson(String jsonData, ObjectMapper objectMapper) {
@@ -134,7 +136,8 @@ public class FlightScraper {
     private static List<FlightCombination> createFlightCombinations(JsonNode rootNode,
                                                                     Map<Integer, List<JsonNode>> outboundFlights,
                                                                     Map<Integer, List<JsonNode>> inboundFlights,
-                                                                    BigDecimal maxPrice, BigDecimal maxTaxes) {
+                                                                    BigDecimal maxPrice, BigDecimal maxTaxes,
+                                                                    String directOutbound, String directInbound) {
         List<FlightCombination> flightCombinations = new ArrayList<>();
 
         for (Integer recommendationId : outboundFlights.keySet()) {
@@ -155,12 +158,12 @@ public class FlightScraper {
                             continue;
                         }
 
-                        FlightSegment[] outboundSegments = extractFlightSegments(outbound);
-                        FlightSegment[] inboundSegments = extractFlightSegments(inbound);
+                        FlightSegment[] outboundSegments = extractFlightSegments(outbound, directOutbound);
+                        FlightSegment[] inboundSegments = extractFlightSegments(inbound, directInbound);
 
                         if (outboundSegments != null && inboundSegments != null) {
                             FlightCombination combination = new FlightCombination(
-                                     twoWayPrice,
+                                    twoWayPrice,
                                     totalTaxes,
                                     outboundSegments,
                                     inboundSegments
@@ -175,16 +178,24 @@ public class FlightScraper {
     }
 
     // Extract up to 1 connection (2 segments max) for a flight
-    public static FlightSegment[] extractFlightSegments(JsonNode flightNode) {
-        JsonNode flights = flightNode.path(FLIGHTS); // Array of flight segments for the flight.
+    public static FlightSegment[] extractFlightSegments(JsonNode flightNode, String directFlight) {
+        JsonNode flights = flightNode.path(FLIGHTS);
 
-        if (flights.size() > 2) {
+        if (directFlight.equals("D") && flights.size() > 1) {
+            System.out.println("Skipping non-direct flight (more than 1 segment)");
             return null;
         }
 
-        FlightSegment[] segments = new FlightSegment[flights.size ()];
+        if (flights.size() > 2) {
+            System.out.println("Skipping flight with more than 1 connection");
+            return null;
+        }
+
+        FlightSegment[] segments = new FlightSegment[flights.size()];
+
         for (int i = 0; i < flights.size(); i++) {
             JsonNode flight = flights.get(i);
+
             segments[i] = new FlightSegment(
                     flight.path(AIRPORT_DEPARTURE).path(CODE).asText(),
                     flight.path(AIRPORT_ARRIVAL).path(CODE).asText(),
