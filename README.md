@@ -1,30 +1,30 @@
 Flight Scraper
 
 Overview
-
-The Flight Scraper program is a Java application designed to fetch flight data from a public API, filter it based on user-defined parameters, and save the results in a CSV file. It also identifies and saves the cheapest flight from the extracted data.
+The Flight Scraper is a Java application that fetches flight data from a public API, filters it based on user-defined parameters, and saves the results in CSV files.
 
 Features
 - Fetch flight data based on user inputs.
 - Filter flights by maximum price and taxes.
 - Save all valid flight combinations to flights.csv.
-- Save the cheapest flight to cheapest_flight.csv.
+- Save the cheapest flight(s) to cheapest_flights.csv.
 - Handles up to 1 flight connection.
 
 Program Structure
 
-Main Class
-
-FlightScraper.java
+Main Class: FlightScraper
 - Handles the overall program flow.
-- Manages user input, API calls, flight data extraction, filtering, and CSV file writing.
+- Manages user input, API calls, flight data extraction and filtering.
 
 Key methods:
 - scrape(): Main method to start the flight scraping process.
-- getUserInputs(): Gathers all input from the user.
-- processFlightData(): Extracts and processes flight data.
-- saveToCSV(): Saves all valid flight combinations to flights.csv.
-- saveCheapestFlightToCSV(): Saves the cheapest flight to cheapest_flight.csv.
+- buildApiUrl(): Builds the API request URL.
+- fetchFlightData(): Retrieves the flight data from the API.
+- processFlightData(): Handles the main logic for processing the flight data.
+- findCheapestFlights(): Finds all flight combinations with the lowest price.
+
+Processing Class: FlightProcessor
+- handles flight processing logic
 
 Data Models
 - FlightCombination class:
@@ -32,11 +32,9 @@ Represents a flight with its price, taxes, and segments (outbound/inbound).
 - FlightSegment class:
 Represents individual flight details (eg. departure/ arrival airports and times).
 
-Utility Methods
-- extractFlightData(): Parses API response and filters flights based on user-defined limits.
-- fetchFlightData(): Retrieves flight data from the API.
-- buildApiUrl(): Builds the API request URL.
-- parseBigDecimal(): Parses user input for price/tax into BigDecimal.
+Modularized Input and Output Handling:
+- Reader class handles all user input and displays unavailable routes.
+- Writer class handles all CSV writing operations.
 
 Usage
 
@@ -59,3 +57,5 @@ Error Handling
 
 Requirements
 - Java 11 or higher.
+- OpenCSV library for handling CSV operations. 
+- Jackson library for JSON parsing.

@@ -1,6 +1,5 @@
 package com.dataextraction.IO;
 
-import java.math.BigDecimal;
 import java.util.Scanner;
 
 public class Reader {
@@ -20,18 +19,6 @@ public class Reader {
     }
     public static void displayUnavailableRoutes() {
         System.out.println("Note: The following routes are not available: JFK-MAD, CPH-AUH, CPH-FUE.");
-    }
-
-    public static BigDecimal parseBigDecimalOrSkip(String input) {
-        if (input.isEmpty()) {
-            return BigDecimal.valueOf(Double.MAX_VALUE);
-        }
-        try {
-            return new BigDecimal(input);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input, using no limit.");
-            return BigDecimal.valueOf(Double.MAX_VALUE);
-        }
     }
 
     private static String getInput(Scanner scanner, String message) {

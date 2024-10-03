@@ -6,18 +6,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.logging.Logger;
 import static com.dataextraction.FlightProcessor.*;
 import static com.dataextraction.IO.Reader.getUserInputs;
-import static com.dataextraction.IO.Reader.parseBigDecimalOrSkip;
 import static com.dataextraction.JsonConstants.*;
 
 public class FlightScraper {
 
     static final String BASE_API_URL = "http://homeworktask.infare.lt/search.php?";
     public static final String FLIGHTS_CSV_PATH = "src/main/resources/flights.csv";
-    public static final String CHEAPEST_FLIGHT_CSV_PATH = "src/main/resources/cheapest_flight.csv";
+    public static final String CHEAPEST_FLIGHTS_CSV_PATH = "src/main/resources/cheapest_flights.csv";
     private static final Logger logger = Logger.getLogger(FlightScraper.class.getName());
 
     public static void scrape() {
@@ -36,10 +39,49 @@ public class FlightScraper {
         String apiUrl = buildApiUrl(airportDeparture, airportArrival, dateDeparture, dateReturn);
 
         String jsonData = fetchFlightData(apiUrl);
+
         if (isValidJson(jsonData)) {
             processFlightData(jsonData, maxPrice, maxTaxes);
         } else {
             System.out.println("Invalid response from API: " + jsonData);
+        }
+    }
+
+    public static BigDecimal parseBigDecimalOrSkip(String input) {
+        if (input.isEmpty()) {
+            return BigDecimal.valueOf(Double.MAX_VALUE);
+        }
+        try {
+            return new BigDecimal(input);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input, using no limit.");
+            return BigDecimal.valueOf(Double.MAX_VALUE);
+        }
+    }
+
+    public static String buildApiUrl(String airportDeparture, String airportArrival, String dateDeparture, String dateReturn) {
+        return BASE_API_URL + "from=" + airportDeparture + "&to=" + airportArrival +
+                "&depart=" + dateDeparture + "&return=" + dateReturn;
+    }
+
+    public static String fetchFlightData(String apiUrl) {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl)) // Specifies the URI for the HTTP request by converting the apiUrl string into a URI object.
+                .build();
+
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                return response.body();
+            } else {
+                System.out.println("Failed to fetch data. HTTP Status code: " + response.statusCode());
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("An error occurred: " + e.getMessage());
+            return null;
         }
     }
 
@@ -48,6 +90,7 @@ public class FlightScraper {
     }
 
     public static List<FlightCombination> extractFlightData(String jsonData, BigDecimal maxPrice, BigDecimal maxTaxes) {
+
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = parseJson(jsonData, objectMapper);
 
@@ -80,6 +123,7 @@ public class FlightScraper {
             String direction = journey.path(DIRECTION).asText();
 
             if (direction.equals(I)) {
+
                 outboundFlights.computeIfAbsent(recommendationId, k -> new ArrayList<>()).add(journey);
             } else if (direction.equals(V)) {
                 inboundFlights.computeIfAbsent(recommendationId, k -> new ArrayList<>()).add(journey);
@@ -100,6 +144,7 @@ public class FlightScraper {
 
                 for (JsonNode outbound : outboundOptions) {
                     for (JsonNode inbound : inboundOptions) {
+
                         BigDecimal twoWayPrice = extractPrice(recommendationId, rootNode);
                         if (twoWayPrice.compareTo(maxPrice) > 0) {
                             continue;
@@ -115,7 +160,7 @@ public class FlightScraper {
 
                         if (outboundSegments != null && inboundSegments != null) {
                             FlightCombination combination = new FlightCombination(
-                                    twoWayPrice,
+                                     twoWayPrice,
                                     totalTaxes,
                                     outboundSegments,
                                     inboundSegments
@@ -131,13 +176,13 @@ public class FlightScraper {
 
     // Extract up to 1 connection (2 segments max) for a flight
     public static FlightSegment[] extractFlightSegments(JsonNode flightNode) {
-        JsonNode flights = flightNode.path(FLIGHTS);
+        JsonNode flights = flightNode.path(FLIGHTS); // Array of flight segments for the flight.
 
         if (flights.size() > 2) {
             return null;
         }
 
-        FlightSegment[] segments = new FlightSegment[flights.size()];
+        FlightSegment[] segments = new FlightSegment[flights.size ()];
         for (int i = 0; i < flights.size(); i++) {
             JsonNode flight = flights.get(i);
             segments[i] = new FlightSegment(
@@ -165,32 +210,18 @@ public class FlightScraper {
         return BigDecimal.valueOf(flightNode.path(IMPORT_TAX_ADL).asDouble());
     }
 
-    public static String[] getFlightSegmentDetails(FlightSegment[] segments, int index) {
-        if (segments.length > index) {
-            return new String[] {
-                    segments[index].getAirportDeparture(),
-                    segments[index].getAirportArrival(),
-                    segments[index].getDepartureTime(),
-                    segments[index].getArrivalTime(),
-                    segments[index].getFlightNumber()
-            };
-        } else {
-            return new String[] {"", "", "", "", ""};
-        }
-    }
-
-    public static FlightCombination findCheapestFlight(List<FlightCombination> flightCombinations) {
+    public static List<FlightCombination> findCheapestFlights(List<FlightCombination> flightCombinations) {
         if (flightCombinations.isEmpty()) {
             return null;
         }
 
-        FlightCombination cheapestFlight = flightCombinations.getFirst();
+        BigDecimal minPrice = flightCombinations.stream()
+                .map(FlightCombination::getPrice)
+                .min(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
 
-        for (FlightCombination combination : flightCombinations) {
-            if (combination.getPrice().compareTo(cheapestFlight.getPrice()) < 0) {
-                cheapestFlight = combination;
-            }
-        }
-        return cheapestFlight;
+        return flightCombinations.stream()
+                .filter(flightCombination -> flightCombination.getPrice().compareTo(minPrice) ==0)
+                .toList();
     }
 }

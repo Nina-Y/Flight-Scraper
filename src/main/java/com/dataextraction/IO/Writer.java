@@ -4,9 +4,7 @@ import com.dataextraction.model.FlightCombination;
 import com.dataextraction.model.FlightSegment;
 import com.opencsv.CSVWriter;
 import java.io.FileWriter;
-import java.util.ArrayList;
 import java.util.List;
-
 import static com.dataextraction.FlightScraper.*;
 
 public class Writer {
@@ -56,13 +54,25 @@ public class Writer {
         writer.writeNext(data);
     }
 
+    public static String[] getFlightSegmentDetails(FlightSegment[] segments, int index) {
+        if (segments.length > index) {
+            return new String[] {
+                    segments[index].getAirportDeparture(),
+                    segments[index].getAirportArrival(),
+                    segments[index].getDepartureTime(),
+                    segments[index].getArrivalTime(),
+                    segments[index].getFlightNumber()
+            };
+        } else {
+            return new String[] {"", "", "", "", ""};
+        }
+    }
+
     public static void saveToCSV(List<FlightCombination> flightCombinations) {
         writeFlightCombinationsToCSV(FLIGHTS_CSV_PATH, flightCombinations);
     }
 
-    public static void saveCheapestFlightToCSV(FlightCombination cheapestFlight) {
-        List<FlightCombination> singleCombinationList = new ArrayList<>();
-        singleCombinationList.add(cheapestFlight);
-        writeFlightCombinationsToCSV(CHEAPEST_FLIGHT_CSV_PATH, singleCombinationList);
+    public static void saveCheapestFlightToCSV(List<FlightCombination> cheapestFlights) {
+        writeFlightCombinationsToCSV(CHEAPEST_FLIGHTS_CSV_PATH, cheapestFlights);
     }
 }
