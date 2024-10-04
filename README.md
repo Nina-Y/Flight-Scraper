@@ -1,6 +1,7 @@
 Flight Scraper
 
 Overview
+
 The Flight Scraper is a Java application that fetches flight data from a public API, filters it based on user-defined parameters, and saves the results in CSV files.
 
 Features
@@ -9,6 +10,7 @@ Features
 - Save all valid flight combinations to flights.csv.
 - Save the cheapest flight(s) to cheapest_flights.csv.
 - Handles up to 1 flight connection.
+- Option to filter by direct flights only
 
 Program Structure
 
@@ -48,8 +50,10 @@ Example:
 - Enter arrival airport code: FUE
 - Enter outbound date: 2024-10-09
 - Enter inbound date: 2024-10-16
-- Enter max price: 700
-- Enter max taxes: 30
+- Enter max price or skip: 700
+- Enter max taxes or skip: 30
+- Enter 'd' for direct Outbound flight or skip: d
+- Enter 'd' for direct Inbound flight or skip: d
 
 Error Handling
 - Invalid API responses are handled with an error message.

@@ -69,7 +69,7 @@ public class FlightScraper {
     public static String fetchFlightData(String apiUrl) {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(apiUrl)) // Specifies the URI for the HTTP request by converting the apiUrl string into a URI object.
+                .uri(URI.create(apiUrl))
                 .build();
 
         try {
